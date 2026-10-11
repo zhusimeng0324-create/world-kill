@@ -57,3 +57,11 @@ In the repository's **Settings → Pages → Build and deployment**, choose
 **GitHub Actions** as the source. After enabling it, rerun the deployment workflow
 if its initial run failed. The published URL is:
 https://zhusimeng0324-create.github.io/world-kill/
+
+## Visual feedback
+
+Cards animate into the hand, played events appear briefly at the table center,
+and nation panels show damage, healing, rescue, and response feedback. Turn
+changes and game results have short transitions. These effects do not alter or
+pause game rules. System `prefers-reduced-motion` settings disable motion while
+keeping the feedback labels visible; overlays do not intercept clicks.

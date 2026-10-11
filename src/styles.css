@@ -801,3 +801,334 @@ button:disabled {
   margin: 7px 0 0;
   font-size: 12px;
 }
+
+/* Presentation-only feedback: animations never delay or block game actions. */
+.intro > * {
+  animation: reveal 650ms both;
+}
+.intro h1 {
+  animation-delay: 80ms;
+}
+.intro .description {
+  animation-delay: 150ms;
+}
+.intro .start-button {
+  animation-delay: 220ms;
+}
+.intro .prototype-note {
+  animation-delay: 280ms;
+}
+.globe {
+  animation: globe-drift 18s ease-in-out infinite;
+}
+.game {
+  animation: reveal 450ms both;
+}
+.player {
+  transition:
+    opacity 450ms,
+    border-color 200ms,
+    box-shadow 200ms;
+}
+.active-player {
+  border-color: #bbd892;
+  box-shadow:
+    0 0 0 2px #bbd892,
+    0 0 24px #bbd89222;
+}
+.targetable-player {
+  border-color: #b8cf9d;
+}
+.targetable-player .target-button {
+  animation: target-glow 1.6s ease-in-out infinite;
+}
+.control-buttons button,
+.target-button {
+  transition:
+    background 150ms,
+    transform 150ms;
+}
+.control-buttons button:not(:disabled):hover,
+.target-button:hover {
+  background: #d4edb0;
+  transform: translateY(-2px);
+}
+.control-buttons button:not(:disabled):active,
+.target-button:active {
+  transform: translateY(1px);
+}
+.playable-card {
+  animation: deal-card 420ms backwards;
+  animation-delay: var(--deal-delay, 0ms);
+  transition:
+    transform 180ms,
+    border-color 180ms,
+    box-shadow 180ms,
+    opacity 180ms;
+}
+.selected-card {
+  box-shadow:
+    0 0 22px #bbd89233,
+    0 10px 24px #08111580;
+}
+.turn-marker,
+.turn-message {
+  animation: reveal 350ms both;
+}
+.turn-message {
+  display: block;
+}
+.response-controls {
+  border-color: #d5aa6f;
+  background: #d5aa6f0c;
+}
+.player-feedback {
+  position: absolute;
+  inset: -2px;
+  z-index: 3;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: impact 600ms both;
+}
+.feedback-damage {
+  color: #ffb1a5;
+  --impact-color: #ee746c33;
+  box-shadow: 0 0 22px #ee746c44;
+}
+.feedback-heal {
+  color: #c6f4c5;
+  --impact-color: #82cd8b33;
+  box-shadow: 0 0 22px #82cd8b33;
+}
+.feedback-block {
+  color: #bde4f8;
+  --impact-color: #7bb8d52b;
+  box-shadow: 0 0 22px #7bb8d533;
+}
+.feedback-draw {
+  color: #d4edb0;
+  --impact-color: #bbd8921a;
+}
+.feedback-number {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: 1px solid currentColor;
+  background: #101c21;
+  padding: 5px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 700;
+  animation: float-feedback 1600ms both;
+}
+.event-display {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  width: 185px;
+  min-height: 150px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  background: #14252bf2;
+  border: 1px solid #bbd892;
+  box-shadow: 0 12px 36px #07111499;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: play-event 1600ms both;
+  color: #d4edb0;
+}
+.event-damage {
+  border-color: #ce8c76;
+  color: #f0b29a;
+}
+.event-block {
+  border-color: #7bb8d5;
+  color: #bde4f8;
+}
+.event-heal {
+  border-color: #82cd8b;
+  color: #c6f4c5;
+}
+.event-source {
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 1px;
+}
+.event-symbol {
+  font-size: 38px;
+  line-height: 1;
+}
+.event-display strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.result-display {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(80%, 360px);
+  padding: 26px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  background: #14252bf2;
+  border: 1px solid #bbd892;
+  box-shadow: 0 0 60px #bbd89222;
+  color: #d4edb0;
+  pointer-events: none;
+  animation: result-reveal 650ms both;
+}
+.result-display > span {
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+.result-display > strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.result-display > small {
+  font-size: 10px;
+  color: #a5b4b1;
+}
+.result-defeat {
+  border-color: #ce8c76;
+  color: #f0b29a;
+  box-shadow: 0 0 60px #ce8c761a;
+}
+.game-log li:first-child {
+  animation: log-reveal 300ms both;
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes globe-drift {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes deal-card {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94) rotate(-3deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+@keyframes target-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 #bbd89200;
+  }
+  50% {
+    box-shadow: 0 0 15px 1px #bbd89244;
+  }
+}
+@keyframes impact {
+  0% {
+    background: transparent;
+  }
+  20% {
+    background: var(--impact-color);
+  }
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+@keyframes float-feedback {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  15%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+@keyframes play-event {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.75) rotate(-7deg);
+  }
+  20%,
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -65%) scale(0.94);
+  }
+}
+@keyframes result-reveal {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes log-reveal {
+  from {
+    background: #bbd89222;
+  }
+  to {
+    background: transparent;
+  }
+}
+@media (max-width: 520px) {
+  .event-display {
+    width: 130px;
+    min-height: 135px;
+    padding: 12px 8px;
+  }
+  .event-display strong {
+    font-size: 14px;
+  }
+  .feedback-number {
+    font-size: 10px;
+    padding: 4px;
+  }
+  .result-display > span {
+    font-size: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .event-display {
+    transform: translate(-50%, -50%);
+  }
+}

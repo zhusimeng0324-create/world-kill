@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
 import { cards, createGame, reduceGame, canPlay, canTarget } from "./game.js";
 
-function Player({ player, active, targetable, onTarget }) {
+import { getFeedback } from "./feedback.js";
+
+function Player({ player, active, targetable, onTarget, feedback, effectId }) {
   return (
     <article
-      className={`player ${player.position} ${player.human ? "human" : ""} ${active ? "active-player" : ""} ${player.hp <= 0 ? "eliminated" : ""}`}
+      className={`player ${player.position} ${player.human ? "human" : ""} ${active ? "active-player" : ""} ${player.hp <= 0 ? "eliminated" : ""} ${targetable ? "targetable-player" : ""}`}
       aria-label={`${player.name}, ${player.hp} HP, ${player.hand.length} cards`}
     >
+      {feedback && (
+        <div
+          key={effectId}
+          className={`player-feedback feedback-${feedback.tone}`}
+          aria-hidden="true"
+        >
+          <span className="feedback-number">{feedback.label}</span>
+        </div>
+      )}
       <div className="player-heading">
         <span className="flag" aria-hidden="true">
           {player.flag}
@@ -41,6 +52,21 @@ function Player({ player, active, targetable, onTarget }) {
 function App() {
   const [game, setGame] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [effects, setEffects] = useState(null);
+  const previousGame = useRef(null);
+  const effectSequence = useRef(0);
+  useEffect(() => {
+    const feedback = getFeedback(previousGame.current, game);
+    previousGame.current = game;
+    if (!feedback) {
+      setEffects(null);
+      return;
+    }
+    const id = ++effectSequence.current;
+    setEffects({ ...feedback, id });
+    const timer = setTimeout(() => setEffects(null), 1700);
+    return () => clearTimeout(timer);
+  }, [game]);
   const started = Boolean(game);
   const send = (action) => {
     setGame((g) => reduceGame(g, action));
@@ -72,7 +98,7 @@ function App() {
         </a>
         <div className="header-meta">
           <span className="status-dot" />
-          PROTOTYPE <span className="version">V.03</span>
+          PROTOTYPE <span className="version">V.04</span>
         </div>
       </header>
       {!started ? (
@@ -122,22 +148,52 @@ function App() {
               TABLE 01 <span> / </span> 6 PLAYERS
             </span>
           </div>
-          <section className="arena" aria-label="Six-player game table">
+          <section
+            className={`arena ${game.phase === "over" ? "finished-arena" : ""}`}
+            aria-label="Six-player game table"
+          >
             <div className="table-surface" aria-hidden="true">
               <div className="table-ring" />
               <div className="table-center">
                 <span className="crosshair">＋</span>
                 <strong>WORLD KILL</strong>
                 <span>GEOPOLITICAL STRATEGY</span>
-                <small>
+                <small key={game.round} className="turn-marker">
                   TURN {game.round} / {game.players[game.turn].code}
                 </small>
               </div>
             </div>
+            {effects?.card && (
+              <div
+                key={effects.id}
+                className={`event-display event-${effects.card.tone}`}
+                aria-hidden="true"
+              >
+                <span className="event-source">
+                  {effects.card.source}
+                  {effects.card.target ? ` → ${effects.card.target}` : ""}
+                </span>
+                <span className="event-symbol">{effects.card.symbol}</span>
+                <strong>{effects.card.name}</strong>
+              </div>
+            )}
+            {game.phase === "over" && (
+              <div
+                className={`result-display ${game.players[5].hp > 0 ? "result-victory" : "result-defeat"}`}
+              >
+                <span>{game.players[5].hp > 0 ? "VICTORY" : "GAME OVER"}</span>
+                <strong>
+                  {game.players[5].hp > 0 ? "最后的存活者" : "中国已出局"}
+                </strong>
+                <small>在下方点击「再来一局」</small>
+              </div>
+            )}
             {game.players.map((player, index) => (
               <Player
                 key={player.code}
                 player={player}
+                feedback={effects?.players[player.code]}
+                effectId={effects?.id}
                 active={game.turn === index && game.phase !== "over"}
                 targetable={Boolean(
                   selectedCard &&
@@ -154,9 +210,15 @@ function App() {
               />
             ))}
           </section>
-          <section className="turn-controls" aria-label="回合操作">
+          <section
+            className={`turn-controls ${game.phase === "respond" ? "response-controls" : ""}`}
+            aria-label="回合操作"
+          >
             <div aria-live="polite">
-              <strong>
+              <strong
+                key={`${game.round}-${game.phase}`}
+                className="turn-message"
+              >
                 {game.phase === "over"
                   ? game.result
                   : game.phase === "respond"
@@ -218,9 +280,10 @@ function App() {
               </p>
             </div>
             <div className="cards">
-              {game.players[5].hand.map((card) => (
+              {game.players[5].hand.map((card, index) => (
                 <button
                   key={card.id}
+                  style={{ "--deal-delay": `${Math.min(index, 7) * 45}ms` }}
                   className={`card playable-card ${selected === card.id ? "selected-card" : ""}`}
                   disabled={game.phase !== "discard" && !canPlay(game, card)}
                   onClick={() => chooseCard(card)}
