@@ -23,11 +23,17 @@ Open the server's `/world-kill/` path. No API keys or backend are required.
 - 人道援助: recover one HP, up to four; automatically consumed to rescue its holder at zero HP.
 - 经济刺激: draw two cards.
 - 经济制裁: discard one random card from an opponent's hand.
+- 情报行动 (顺手牵羊): take a random hand card from an opponent; no distance limit.
+- 区域冲突 (南蛮入侵): every other surviving nation, in turn order, responds with 军事打击 or loses one HP.
+- 全球危机 (万箭齐发): every other surviving nation responds with 防御拦截 or loses one HP.
+- 战略对抗 (决斗): target responds first with 军事打击, then both sides alternate until one declines or has none; that side loses one HP. Response strikes do not consume the once-per-turn attack allowance.
+- The game pauses for human responses; AI automatically plays a matching card when available. Use the response button or choose to take damage.
+- The in-game 锦囊牌图鉴 lists all six trick types and their original equivalents.
 - Click a playable card, then choose a country if it requires a target.
 - End your turn and choose cards to discard until your hand size is at most your HP.
 - At zero HP without aid, a nation is eliminated. Eliminated nations lose their hands and skip turns.
 - The last survivor wins. If China is eliminated, the game ends with a loss and can be restarted.
-- The 72-card deck reshuffles discarded cards when exhausted. AI picks random legal targets.
+- The 100-card deck reshuffles discarded cards when exhausted. AI picks random legal targets.
 - No distance, equipment, hidden roles, country abilities, or networking in this version.
 
 ## Validation and production build

@@ -16,7 +16,7 @@ export const cards = {
   defense: {
     name: "防御拦截",
     symbol: "◈",
-    description: "受到军事打击时使用，抵消伤害。",
+    description: "响应军事打击或全球危机，抵消伤害。",
   },
   aid: {
     name: "人道援助",
@@ -30,6 +30,43 @@ export const cards = {
     description: "随机弃掉一名对手的一张手牌。",
     target: true,
   },
+  intelligence: {
+    name: "情报行动",
+    symbol: "?",
+    target: true,
+    original: "顺手牵羊",
+    description: "随机获得一名对手的一张手牌；不限制距离。",
+  },
+  conflict: {
+    name: "区域冲突",
+    symbol: "!",
+    original: "南蛮入侵",
+    description: "其他存活国家依次打出军事打击，否则失去 1 HP。",
+  },
+  crisis: {
+    name: "全球危机",
+    symbol: "◎",
+    original: "万箭齐发",
+    description: "其他存活国家依次打出防御拦截，否则失去 1 HP。",
+  },
+  duel: {
+    name: "战略对抗",
+    symbol: "≠",
+    target: true,
+    original: "决斗",
+    description: "目标先出军事打击，双方交替响应，先不出者失去 1 HP。",
+  },
+};
+export const deckCounts = {
+  strike: 24,
+  defense: 18,
+  aid: 12,
+  economy: 8,
+  sanction: 10,
+  intelligence: 8,
+  conflict: 6,
+  crisis: 6,
+  duel: 8,
 };
 const order = [5, 0, 1, 2, 3, 4];
 function shuffle(list, rng) {
@@ -100,13 +137,7 @@ function nextTurn(g, rng) {
 export function createGame(rng = Math.random) {
   let id = 0;
   const deck = shuffle(
-    Object.entries({
-      strike: 24,
-      defense: 18,
-      aid: 12,
-      economy: 8,
-      sanction: 10,
-    }).flatMap(([type, count]) =>
+    Object.entries(deckCounts).flatMap(([type, count]) =>
       Array.from({ length: count }, () => ({ id: ++id, type })),
     ),
     rng,
@@ -128,6 +159,14 @@ export function createGame(rng = Math.random) {
   log(g, "中国先手：每国初始 4 张牌，回合开始摸两张。");
   return g;
 }
+export function canTarget(g, type, actor, target) {
+  return Boolean(
+    target &&
+    target !== actor &&
+    target.hp > 0 &&
+    (!["sanction", "intelligence"].includes(type) || target.hand.length > 0),
+  );
+}
 export function canPlay(g, card) {
   return (
     g.phase === "play" &&
@@ -136,8 +175,49 @@ export function canPlay(g, card) {
       ? !g.attacked
       : card.type === "aid"
         ? g.players[5].hp < 4
-        : card.type !== "defense")
+        : card.type !== "defense") &&
+    (!cards[card.type].target ||
+      g.players.some((p) => canTarget(g, card.type, g.players[5], p)))
   );
+}
+function advanceResponse(g, answered) {
+  const effect = g.pending;
+  if (effect.kind === "duel") {
+    if (answered)
+      effect.responder =
+        effect.responder === effect.source ? effect.target : effect.source;
+    else g.pending = null;
+  } else {
+    effect.targets.shift();
+    if (!effect.targets.length) g.pending = null;
+  }
+}
+// Resolve AI responses until the human needs to choose, or the effect is done.
+function resolveEffect(g) {
+  while (g.pending && g.phase !== "over") {
+    const effect = g.pending;
+    const index = effect.kind === "duel" ? effect.responder : effect.targets[0];
+    const responder = g.players[index];
+    if (responder.hp <= 0) {
+      advanceResponse(g, false);
+      continue;
+    }
+    if (responder.human) {
+      g.phase = "respond";
+      return;
+    }
+    const response = responder.hand.find((c) => c.type === effect.required);
+    if (response) {
+      remove(g, responder, response.id);
+      log(
+        g,
+        `${responder.name} 打出${cards[effect.required].name}响应${cards[effect.type].name}。`,
+      );
+    } else damage(g, responder);
+    if (g.phase === "over") return;
+    advanceResponse(g, Boolean(response));
+  }
+  if (g.phase !== "over") g.phase = g.turn === 5 ? "play" : "ai";
 }
 function play(g, actor, card, target, rng) {
   remove(g, actor, card.id);
@@ -147,20 +227,49 @@ function play(g, actor, card, target, rng) {
   );
   if (card.type === "aid") actor.hp = Math.min(4, actor.hp + 1);
   if (card.type === "economy") draw(g, actor, 2, rng);
-  if (card.type === "sanction")
-    remove(g, target, target.hand[Math.floor(rng() * target.hand.length)].id);
-  if (card.type === "strike") {
-    g.attacked = true;
-    if (target.human) {
-      g.pending = { attacker: actor.name };
-      g.phase = "respond";
-    } else {
-      const defense = target.hand.find((c) => c.type === "defense");
-      if (defense) {
-        remove(g, target, defense.id);
-        log(g, `${target.name} 使用防御拦截。`);
-      } else damage(g, target);
-    }
+  if (card.type === "sanction" || card.type === "intelligence") {
+    const i = Math.floor(rng() * target.hand.length);
+    const [taken] = target.hand.splice(i, 1);
+    if (card.type === "intelligence") actor.hand.push(taken);
+    else g.discard.push(taken);
+  }
+  const source = g.turn;
+  if (card.type === "strike" || card.type === "duel") {
+    const targetIndex = g.players.indexOf(target);
+    if (card.type === "strike") g.attacked = true;
+    g.pending =
+      card.type === "duel"
+        ? {
+            kind: "duel",
+            type: card.type,
+            source,
+            target: targetIndex,
+            responder: targetIndex,
+            required: "strike",
+          }
+        : {
+            kind: "strike",
+            type: card.type,
+            source,
+            targets: [targetIndex],
+            required: "defense",
+          };
+    resolveEffect(g);
+  }
+  if (card.type === "conflict" || card.type === "crisis") {
+    const start = order.indexOf(source);
+    const targets = Array.from(
+      { length: order.length - 1 },
+      (_, i) => order[(start + i + 1) % order.length],
+    ).filter((i) => g.players[i].hp > 0);
+    g.pending = {
+      kind: "area",
+      type: card.type,
+      source,
+      targets,
+      required: card.type === "conflict" ? "strike" : "defense",
+    };
+    resolveEffect(g);
   }
 }
 export function reduceGame(state, action, rng = Math.random) {
@@ -172,13 +281,7 @@ export function reduceGame(state, action, rng = Math.random) {
     const card = actor.hand.find((c) => c.id === action.cardId);
     if (!card || !canPlay(g, card)) return state;
     const target = g.players.find((p) => p.code === action.target);
-    if (
-      cards[card.type].target &&
-      (!target ||
-        target === actor ||
-        target.hp <= 0 ||
-        (card.type === "sanction" && !target.hand.length))
-    )
+    if (cards[card.type].target && !canTarget(g, card.type, actor, target))
       return state;
     play(g, actor, card, cards[card.type].target ? target : null, rng);
   } else if (action.type === "end" && g.turn === 5 && g.phase === "play") {
@@ -191,28 +294,33 @@ export function reduceGame(state, action, rng = Math.random) {
     if (actor.hand.length <= actor.hp) nextTurn(g, rng);
   } else if (action.type === "respond" && g.phase === "respond") {
     const human = g.players[5];
+    const required = g.pending.required;
     if (action.defend) {
-      const defense = human.hand.find((c) => c.type === "defense");
-      if (!defense) return state;
-      remove(g, human, defense.id);
-      log(g, "中国使用防御拦截。");
+      const response = human.hand.find((c) => c.type === required);
+      if (!response) return state;
+      remove(g, human, response.id);
+      log(
+        g,
+        `中国打出${cards[required].name}响应${cards[g.pending.type].name}。`,
+      );
     } else damage(g, human);
     if (g.phase !== "over") {
-      g.pending = null;
-      g.phase = "ai";
+      advanceResponse(g, Boolean(action.defend));
+      resolveEffect(g);
     }
   } else if (action.type === "ai" && g.phase === "ai") {
     const targets = g.players.filter((p) => p !== actor && p.hp > 0);
     let card = actor.hp < 4 && actor.hand.find((c) => c.type === "aid");
     card ||= actor.hand.find((c) => c.type === "economy");
     card ||= !g.attacked && actor.hand.find((c) => c.type === "strike");
+    card ||= actor.hand.find((c) =>
+      ["conflict", "crisis", "duel"].includes(c.type),
+    );
     card ||=
       targets.some((p) => p.hand.length) &&
-      actor.hand.find((c) => c.type === "sanction");
+      actor.hand.find((c) => ["sanction", "intelligence"].includes(c.type));
     if (card) {
-      const valid = targets.filter(
-        (p) => card.type !== "sanction" || p.hand.length,
-      );
+      const valid = targets.filter((p) => canTarget(g, card.type, actor, p));
       const target = valid[Math.floor(rng() * valid.length)];
       play(g, actor, card, cards[card.type].target ? target : null, rng);
     } else {

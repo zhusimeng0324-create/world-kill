@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-import { cards, createGame, reduceGame, canPlay } from "./game.js";
+import { cards, createGame, reduceGame, canPlay, canTarget } from "./game.js";
 
 function Player({ player, active, targetable, onTarget }) {
   return (
@@ -72,7 +72,7 @@ function App() {
         </a>
         <div className="header-meta">
           <span className="status-dot" />
-          PROTOTYPE <span className="version">V.02</span>
+          PROTOTYPE <span className="version">V.03</span>
         </div>
       </header>
       {!started ? (
@@ -142,9 +142,7 @@ function App() {
                 targetable={Boolean(
                   selectedCard &&
                   game.phase === "play" &&
-                  player.hp > 0 &&
-                  !player.human &&
-                  (selectedCard.type !== "sanction" || player.hand.length > 0),
+                  canTarget(game, selectedCard.type, game.players[5], player),
                 )}
                 onTarget={() =>
                   send({
@@ -162,7 +160,7 @@ function App() {
                 {game.phase === "over"
                   ? game.result
                   : game.phase === "respond"
-                    ? `${game.pending.attacker} 对你发动军事打击！`
+                    ? `${game.players[game.pending.source].name} 的${cards[game.pending.type].name}：请打出${cards[game.pending.required].name}，或承受 1 点伤害。`
                     : game.phase === "discard"
                       ? `请选择弃掉 ${game.players[5].hand.length - game.players[5].hp} 张牌`
                       : game.phase === "ai"
@@ -183,11 +181,13 @@ function App() {
                 <>
                   <button
                     disabled={
-                      !game.players[5].hand.some((c) => c.type === "defense")
+                      !game.players[5].hand.some(
+                        (c) => c.type === game.pending.required,
+                      )
                     }
                     onClick={() => send({ type: "respond", defend: true })}
                   >
-                    使用防御拦截
+                    打出{cards[game.pending.required].name}
                   </button>
                   <button
                     onClick={() => send({ type: "respond", defend: false })}
@@ -228,7 +228,11 @@ function App() {
                   aria-pressed={selected === card.id}
                 >
                   <div className="card-top">
-                    <span>WORLD KILL</span>
+                    <span>
+                      {["strike", "defense", "aid"].includes(card.type)
+                        ? "基本牌"
+                        : "锦囊牌"}
+                    </span>
                     <span>{card.id}</span>
                   </div>
                   <div className="card-symbol" aria-hidden="true">
@@ -252,10 +256,34 @@ function App() {
             <p>
               中国先手，每国 4 HP、初始 4 张牌。回合开始摸 2
               张，可使用多张事件牌，但军事打击限一次。结束回合须弃牌至手牌数不超过
-              HP。防御拦截仅在受攻击时使用，人道援助在 0 HP
+              HP。响应锦囊时打出的军事打击不占用每回合的攻击次数。人道援助在 0
+              HP
               时自动自救，否则立即出局。最后存活者获胜；中国出局后本局结束。没有距离、装备、身份或国家技能。其他五国为本地简单
               AI，随机选择合法目标。牌堆耗尽后洗回弃牌。
             </p>
+          </details>
+          <details className="rules card-guide">
+            <summary>锦囊牌图鉴（6 种）</summary>
+            <dl>
+              {Object.entries(cards)
+                .filter(
+                  ([type]) => !["strike", "defense", "aid"].includes(type),
+                )
+                .map(([type, info]) => (
+                  <div key={type}>
+                    <dt>
+                      {info.name}{" "}
+                      <span>
+                        {" "}
+                        /{" "}
+                        {info.original ||
+                          (type === "economy" ? "无中生有" : "过河拆桥")}
+                      </span>
+                    </dt>
+                    <dd>{info.description}</dd>
+                  </div>
+                ))}
+            </dl>
           </details>
           <section className="game-log" aria-label="战局记录">
             <h2>战局记录</h2>

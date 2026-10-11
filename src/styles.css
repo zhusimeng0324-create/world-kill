@@ -778,3 +778,26 @@ button:disabled {
     grid-template-rows: 170px 1fr 130px;
   }
 }
+
+.card-guide dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.card-guide dl > div {
+  padding: 14px;
+  border: 1px solid #3d5054;
+  background: #17272d;
+}
+.card-guide dt {
+  color: #d4edb0;
+  font-size: 14px;
+}
+.card-guide dt span {
+  color: #a5b4b1;
+  font-size: 11px;
+}
+.card-guide dd {
+  margin: 7px 0 0;
+  font-size: 12px;
+}
