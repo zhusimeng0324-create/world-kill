@@ -4,6 +4,8 @@ import "./styles.css";
 
 import { cards, createGame, reduceGame, canPlay, canTarget } from "./game.js";
 
+import { eventPack, historicalEvents, getCardEvent } from "./events.js";
+
 import { getFeedback } from "./feedback.js";
 
 function Player({ player, active, targetable, onTarget, feedback, effectId }) {
@@ -98,7 +100,7 @@ function App() {
         </a>
         <div className="header-meta">
           <span className="status-dot" />
-          PROTOTYPE <span className="version">V.04</span>
+          PROTOTYPE <span className="version">V.05</span>
         </div>
       </header>
       {!started ? (
@@ -128,6 +130,10 @@ function App() {
             >
               Start Game <span aria-hidden="true">↗</span>
             </button>
+            <p className="landing-event-note">
+              历史事件包 {eventPack.version} · {eventPack.label} ·{" "}
+              {eventPack.period}
+            </p>
             <p className="prototype-note">
               PLAYABLE PROTOTYPE <span>•</span> SIX-PLAYER TABLE
             </p>
@@ -147,6 +153,12 @@ function App() {
             <span className="table-badge">
               TABLE 01 <span> / </span> 6 PLAYERS
             </span>
+          </div>
+          <div className="event-pack-banner">
+            <span>历史事件包 {eventPack.version}</span>
+            <strong>{eventPack.label}</strong>
+            <small>{eventPack.period} · 定期更新</small>
+            <a href="#historical-events">查看背景与来源 ↓</a>
           </div>
           <section
             className={`arena ${game.phase === "over" ? "finished-arena" : ""}`}
@@ -174,7 +186,14 @@ function App() {
                   {effects.card.target ? ` → ${effects.card.target}` : ""}
                 </span>
                 <span className="event-symbol">{effects.card.symbol}</span>
-                <strong>{effects.card.name}</strong>
+                <strong>
+                  {getCardEvent(effects.card)?.title || effects.card.name}
+                </strong>
+                {getCardEvent(effects.card) && (
+                  <small>
+                    {effects.card.name} · {getCardEvent(effects.card).date}
+                  </small>
+                )}
               </div>
             )}
             {game.phase === "over" && (
@@ -280,35 +299,49 @@ function App() {
               </p>
             </div>
             <div className="cards">
-              {game.players[5].hand.map((card, index) => (
-                <button
-                  key={card.id}
-                  style={{ "--deal-delay": `${Math.min(index, 7) * 45}ms` }}
-                  className={`card playable-card ${selected === card.id ? "selected-card" : ""}`}
-                  disabled={game.phase !== "discard" && !canPlay(game, card)}
-                  onClick={() => chooseCard(card)}
-                  aria-label={`${game.phase === "discard" ? "弃掉" : "使用"}${cards[card.type].name} ${card.id}`}
-                  aria-pressed={selected === card.id}
-                >
-                  <div className="card-top">
-                    <span>
-                      {["strike", "defense", "aid"].includes(card.type)
-                        ? "基本牌"
-                        : "锦囊牌"}
-                    </span>
-                    <span>{card.id}</span>
-                  </div>
-                  <div className="card-symbol" aria-hidden="true">
-                    {cards[card.type].symbol}
-                  </div>
-                  <div className="card-bottom">
-                    <h3>{cards[card.type].name}</h3>
-                    <span className="card-description">
-                      {cards[card.type].description}
-                    </span>
-                  </div>
-                </button>
-              ))}
+              {game.players[5].hand.map((card, index) => {
+                const story = getCardEvent(card);
+                return (
+                  <button
+                    key={card.id}
+                    style={{ "--deal-delay": `${Math.min(index, 7) * 45}ms` }}
+                    className={`card playable-card ${story ? "historical-card" : ""} ${selected === card.id ? "selected-card" : ""}`}
+                    disabled={game.phase !== "discard" && !canPlay(game, card)}
+                    onClick={() => chooseCard(card)}
+                    aria-label={`${game.phase === "discard" ? "弃掉" : "使用"}${cards[card.type].name} ${card.id}`}
+                    aria-pressed={selected === card.id}
+                    title={
+                      story
+                        ? `${story.title} · ${story.date}\n${story.summary}\n牌效：${cards[card.type].description}`
+                        : cards[card.type].description
+                    }
+                  >
+                    <div className="card-top">
+                      <span>
+                        {["strike", "defense", "aid"].includes(card.type)
+                          ? "基本牌"
+                          : "锦囊牌"}
+                      </span>
+                      <span>{story ? "史实" : card.id}</span>
+                    </div>
+                    <div className="card-symbol" aria-hidden="true">
+                      {cards[card.type].symbol}
+                    </div>
+                    <div className="card-bottom">
+                      <h3>{story?.title || cards[card.type].name}</h3>
+                      {story && (
+                        <span className="card-event-date">{story.date}</span>
+                      )}
+                      <span className="card-rule-name">
+                        {cards[card.type].name}
+                      </span>
+                      <span className="card-description">
+                        {cards[card.type].description}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             {!game.players[5].hand.length && (
               <p className="empty-hand">暂无手牌</p>
@@ -325,6 +358,40 @@ function App() {
               AI，随机选择合法目标。牌堆耗尽后洗回弃牌。
             </p>
           </details>
+          <section
+            id="historical-events"
+            className="historical-events"
+            aria-label="历史事件背景与来源"
+          >
+            <h2>
+              事件背景与来源 <span>EVENT PACK {eventPack.version}</span>
+            </h2>
+            <p className="event-pack-description">
+              本包收录 {eventPack.period}{" "}
+              年的历史事件，供了解背景；不是实时新闻。牌效为游戏抽象，出牌目标不代表真实事件中的当事方。
+            </p>
+            <div className="historical-event-list">
+              {historicalEvents.map((event) => (
+                <article key={event.id}>
+                  <div className="historical-event-heading">
+                    <time dateTime={event.date}>{event.date}</time>
+                    <span>
+                      {event.types.map((type) => cards[type].name).join(" / ")}
+                    </span>
+                  </div>
+                  <h3>{event.title}</h3>
+                  <p>{event.summary}</p>
+                  <a
+                    href={event.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {event.source.name} ↗
+                  </a>
+                </article>
+              ))}
+            </div>
+          </section>
           <details className="rules card-guide">
             <summary>锦囊牌图鉴（6 种）</summary>
             <dl>

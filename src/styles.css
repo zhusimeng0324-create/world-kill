@@ -1132,3 +1132,139 @@ button:disabled {
     transform: translate(-50%, -50%);
   }
 }
+
+.landing-event-note {
+  color: #a5b8b1;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+.event-pack-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 14px 18px;
+  border: 1px solid #496258;
+  background: #23372f55;
+  font-size: 12px;
+}
+.event-pack-banner > span {
+  color: #bbd892;
+  font-size: 10px;
+}
+.event-pack-banner strong {
+  font-weight: 500;
+}
+.event-pack-banner small {
+  color: #a5b4b1;
+}
+.event-pack-banner a {
+  margin-left: auto;
+  color: #bbd892;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.historical-card {
+  border-top: 3px solid #bbd892;
+  height: 270px;
+}
+.card-bottom h3 {
+  line-height: 1.5;
+}
+.card-bottom .card-event-date {
+  font-size: 9px;
+  letter-spacing: 1px;
+  display: block;
+  margin: 5px 0;
+  color: #bbd892;
+}
+.card-bottom .card-rule-name {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0;
+  margin: 7px 0;
+  color: #d4edb0;
+}
+.card:not(.historical-card) .card-rule-name {
+  display: none;
+}
+.event-display small {
+  font-size: 9px;
+  line-height: 1.6;
+}
+.historical-events {
+  margin-top: 28px;
+  scroll-margin-top: 20px;
+}
+.historical-events > h2 {
+  font-size: 17px;
+  font-weight: 500;
+}
+.historical-events > h2 span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  margin-left: 12px;
+  color: #bbd892;
+}
+.event-pack-description {
+  color: #a5b4b1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.historical-event-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.historical-event-list article {
+  padding: 18px;
+  border: 1px solid #3d5054;
+  background: #17272d;
+}
+.historical-event-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 9px;
+  color: #a5b4b1;
+}
+.historical-event-heading time {
+  color: #bbd892;
+}
+.historical-event-list h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 14px 0;
+}
+.historical-event-list p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #a5b4b1;
+}
+.historical-event-list a {
+  display: block;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #bbd892;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .historical-event-list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .historical-card {
+    height: 250px;
+  }
+  .event-pack-banner {
+    padding: 12px;
+  }
+  .event-pack-banner a {
+    margin-left: 0;
+  }
+}

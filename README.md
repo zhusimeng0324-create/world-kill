@@ -65,3 +65,21 @@ and nation panels show damage, healing, rescue, and response feedback. Turn
 changes and game results have short transitions. These effects do not alter or
 pause game rules. System `prefers-reduced-motion` settings disable motion while
 keeping the feedback labels visible; overlays do not intercept clicks.
+
+## Historical event packs
+
+Pack 01 covers the full-scale invasion of Ukraine (2022-02-24), the EU's tenth
+Russia sanctions package (2023-02-25), and the signing of the Black Sea Grain
+Initiative (2022-07-22). These are dated historical snapshots, not live news.
+Official source links and background text appear under 事件背景与来源.
+
+The theme is presentation only: the original card type, deck quantities, turn
+rules, AI, and effects remain unchanged. In-game actors and targets are fictional
+choices and do not represent the actual parties to a historical event.
+
+To periodically refresh a pack, edit `src/events.js`, updating the event title,
+date, summary, official source URL, and compatible card types together. Update the
+pack version and period, then run `npm test` and `npm run build`, review the dated
+content, and deploy through the existing Pages workflow. New events should have
+reliable supporting sources; do not label old snapshots as current news. There
+is no automatic news fetch, API key, or scheduled content update.
