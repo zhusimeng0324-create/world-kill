@@ -1,44 +1,68 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const countries = [
-  { name: "United States", code: "US", flag: "🇺🇸", position: "northwest" },
-  { name: "Russia", code: "RU", flag: "🇷🇺", position: "north" },
-  { name: "European Union", code: "EU", flag: "🇪🇺", position: "northeast" },
-  { name: "India", code: "IN", flag: "🇮🇳", position: "west" },
-  { name: "Japan", code: "JP", flag: "🇯🇵", position: "east" },
-  { name: "China", code: "CN", flag: "🇨🇳", position: "south", human: true },
-];
+import { cards, createGame, reduceGame, canPlay } from "./game.js";
 
-function Player({ player }) {
+function Player({ player, active, targetable, onTarget }) {
   return (
     <article
-      className={`player ${player.position} ${player.human ? "human" : ""}`}
-      aria-label={`${player.name}, 4 HP, 4 cards${player.human ? ", human player" : ""}`}
+      className={`player ${player.position} ${player.human ? "human" : ""} ${active ? "active-player" : ""} ${player.hp <= 0 ? "eliminated" : ""}`}
+      aria-label={`${player.name}, ${player.hp} HP, ${player.hand.length} cards`}
     >
       <div className="player-heading">
         <span className="flag" aria-hidden="true">
           {player.flag}
         </span>
         <span className="country-code">{player.code}</span>
-        <span className="seat-type">{player.human ? "YOU" : "PLAYER"}</span>
+        <span className="seat-type">
+          {player.hp <= 0 ? "OUT" : player.human ? "YOU" : "AI"}
+        </span>
       </div>
       <h2>{player.name}</h2>
       <div className="player-stats">
         <span className="hp">
-          <span aria-hidden="true">● ● ● ●</span> <b>4 HP</b>
+          <span aria-hidden="true">{"● ".repeat(player.hp)}</span>
+          <b>{player.hp} HP</b>
         </span>
         <span>
-          ▱ <b>4</b> cards
+          ▱ <b>{player.hand.length}</b> cards
         </span>
       </div>
+      {targetable && (
+        <button className="target-button" onClick={onTarget}>
+          选择 {player.name}
+        </button>
+      )}
     </article>
   );
 }
 
 function App() {
-  const [started, setStarted] = useState(false);
+  const [game, setGame] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const started = Boolean(game);
+  const send = (action) => {
+    setGame((g) => reduceGame(g, action));
+    setSelected(null);
+  };
+  useEffect(() => {
+    if (game?.phase !== "ai") return;
+    const timer = setTimeout(
+      () => setGame((g) => reduceGame(g, { type: "ai" })),
+      650,
+    );
+    return () => clearTimeout(timer);
+  }, [game]);
+  const selectedCard = game?.players[5].hand.find((c) => c.id === selected);
+  function chooseCard(card) {
+    if (game.phase === "discard")
+      return send({ type: "discard", cardId: card.id });
+    if (!canPlay(game, card)) return;
+    if (cards[card.type].target)
+      setSelected(selected === card.id ? null : card.id);
+    else send({ type: "play", cardId: card.id });
+  }
   return (
     <div className="app">
       <header>
@@ -48,7 +72,7 @@ function App() {
         </a>
         <div className="header-meta">
           <span className="status-dot" />
-          PROTOTYPE <span className="version">V.01</span>
+          PROTOTYPE <span className="version">V.02</span>
         </div>
       </header>
       {!started ? (
@@ -72,11 +96,14 @@ function App() {
               Six nations. One table.
               <br />A new arena for geopolitical strategy.
             </p>
-            <button className="start-button" onClick={() => setStarted(true)}>
+            <button
+              className="start-button"
+              onClick={() => setGame(createGame())}
+            >
               Start Game <span aria-hidden="true">↗</span>
             </button>
             <p className="prototype-note">
-              FIRST PROTOTYPE <span>•</span> SIX-PLAYER TABLE
+              PLAYABLE PROTOTYPE <span>•</span> SIX-PLAYER TABLE
             </p>
           </section>
           <div className="landing-footer">
@@ -102,46 +129,141 @@ function App() {
                 <span className="crosshair">＋</span>
                 <strong>WORLD KILL</strong>
                 <span>GEOPOLITICAL STRATEGY</span>
-                <small>PROTOTYPE / TABLE PREVIEW</small>
+                <small>
+                  TURN {game.round} / {game.players[game.turn].code}
+                </small>
               </div>
             </div>
-            {countries.map((player) => (
-              <Player key={player.code} player={player} />
+            {game.players.map((player, index) => (
+              <Player
+                key={player.code}
+                player={player}
+                active={game.turn === index && game.phase !== "over"}
+                targetable={Boolean(
+                  selectedCard &&
+                  game.phase === "play" &&
+                  player.hp > 0 &&
+                  !player.human &&
+                  (selectedCard.type !== "sanction" || player.hand.length > 0),
+                )}
+                onTarget={() =>
+                  send({
+                    type: "play",
+                    cardId: selectedCard.id,
+                    target: player.code,
+                  })
+                }
+              />
             ))}
+          </section>
+          <section className="turn-controls" aria-label="回合操作">
+            <div aria-live="polite">
+              <strong>
+                {game.phase === "over"
+                  ? game.result
+                  : game.phase === "respond"
+                    ? `${game.pending.attacker} 对你发动军事打击！`
+                    : game.phase === "discard"
+                      ? `请选择弃掉 ${game.players[5].hand.length - game.players[5].hp} 张牌`
+                      : game.phase === "ai"
+                        ? `${game.players[game.turn].name} 正在行动…`
+                        : selectedCard
+                          ? "点击目标国家使用 " + cards[selectedCard.type].name
+                          : "你的回合：点击手牌出牌"}
+              </strong>
+            </div>
+            <div className="control-buttons">
+              {game.phase === "play" && (
+                <button onClick={() => send({ type: "end" })}>结束回合</button>
+              )}
+              {selectedCard && (
+                <button onClick={() => setSelected(null)}>取消选择</button>
+              )}
+              {game.phase === "respond" && (
+                <>
+                  <button
+                    disabled={
+                      !game.players[5].hand.some((c) => c.type === "defense")
+                    }
+                    onClick={() => send({ type: "respond", defend: true })}
+                  >
+                    使用防御拦截
+                  </button>
+                  <button
+                    onClick={() => send({ type: "respond", defend: false })}
+                  >
+                    承受 1 点伤害
+                  </button>
+                </>
+              )}
+              {game.phase === "over" && (
+                <button onClick={() => send({ type: "restart" })}>
+                  再来一局
+                </button>
+              )}
+            </div>
           </section>
           <section className="hand" aria-label="China's hand">
             <div className="hand-label">
               <div>
                 <p className="eyebrow">YOUR HAND</p>
                 <h2>
-                  China <span>/ 4 CARDS</span>
+                  China <span>/ {game.players[5].hand.length} CARDS</span>
                 </h2>
               </div>
               <p>
-                Placeholder cards <span>—</span> preview only
+                {game.attacked && game.turn === 5
+                  ? "本回合已使用军事打击"
+                  : "每回合一次军事打击"}
               </p>
             </div>
             <div className="cards">
-              {[1, 2, 3, 4].map((number) => (
-                <article
-                  className="card"
-                  key={number}
-                  aria-label={`Placeholder card ${number}`}
+              {game.players[5].hand.map((card) => (
+                <button
+                  key={card.id}
+                  className={`card playable-card ${selected === card.id ? "selected-card" : ""}`}
+                  disabled={game.phase !== "discard" && !canPlay(game, card)}
+                  onClick={() => chooseCard(card)}
+                  aria-label={`${game.phase === "discard" ? "弃掉" : "使用"}${cards[card.type].name} ${card.id}`}
+                  aria-pressed={selected === card.id}
                 >
                   <div className="card-top">
                     <span>WORLD KILL</span>
-                    <span>0{number}</span>
+                    <span>{card.id}</span>
                   </div>
                   <div className="card-symbol" aria-hidden="true">
-                    ◇<span>＋</span>
+                    {cards[card.type].symbol}
                   </div>
                   <div className="card-bottom">
-                    <h3>Placeholder</h3>
-                    <span>CARD 0{number}</span>
+                    <h3>{cards[card.type].name}</h3>
+                    <span className="card-description">
+                      {cards[card.type].description}
+                    </span>
                   </div>
-                </article>
+                </button>
               ))}
             </div>
+            {!game.players[5].hand.length && (
+              <p className="empty-hand">暂无手牌</p>
+            )}
+          </section>
+          <details className="rules">
+            <summary>玩法说明</summary>
+            <p>
+              中国先手，每国 4 HP、初始 4 张牌。回合开始摸 2
+              张，可使用多张事件牌，但军事打击限一次。结束回合须弃牌至手牌数不超过
+              HP。防御拦截仅在受攻击时使用，人道援助在 0 HP
+              时自动自救，否则立即出局。最后存活者获胜；中国出局后本局结束。没有距离、装备、身份或国家技能。其他五国为本地简单
+              AI，随机选择合法目标。牌堆耗尽后洗回弃牌。
+            </p>
+          </details>
+          <section className="game-log" aria-label="战局记录">
+            <h2>战局记录</h2>
+            <ol>
+              {game.log.map((entry, i) => (
+                <li key={`${game.round}-${i}-${entry}`}>{entry}</li>
+              ))}
+            </ol>
           </section>
         </main>
       )}
@@ -149,7 +271,7 @@ function App() {
         <span>WORLD KILL © {new Date().getFullYear()}</span>
         <span>
           {started
-            ? "TABLE PREVIEW · NO GAMEPLAY YET"
+            ? "LOCAL GAME · FIVE AI OPPONENTS"
             : "A GEOPOLITICAL CARD GAME"}
         </span>
       </footer>

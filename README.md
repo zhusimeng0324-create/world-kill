@@ -1,6 +1,7 @@
 # WORLD KILL
 
-A React + Vite prototype for a geopolitical strategy card game.
+A local, single-player geopolitical strategy card game built with React + Vite.
+China is the human player; five other nations use simple AI.
 
 ## Development
 
@@ -11,14 +12,34 @@ npm ci
 npm run dev -- --host 0.0.0.0
 ```
 
-## Production build
+Open the server's `/world-kill/` path. No API keys or backend are required.
+
+## Rules
+
+- Each nation starts with 4 HP and four cards. China goes first.
+- Draw two cards at the start of each turn. China's first turn starts with six cards.
+- 军事打击: deal one damage to an opponent, once per turn.
+- 防御拦截: respond to an attack to cancel its damage.
+- 人道援助: recover one HP, up to four; automatically consumed to rescue its holder at zero HP.
+- 经济刺激: draw two cards.
+- 经济制裁: discard one random card from an opponent's hand.
+- Click a playable card, then choose a country if it requires a target.
+- End your turn and choose cards to discard until your hand size is at most your HP.
+- At zero HP without aid, a nation is eliminated. Eliminated nations lose their hands and skip turns.
+- The last survivor wins. If China is eliminated, the game ends with a loss and can be restarted.
+- The 72-card deck reshuffles discarded cards when exhausted. AI picks random legal targets.
+- No distance, equipment, hidden roles, country abilities, or networking in this version.
+
+## Validation and production build
 
 ```sh
+npm test
 npm run build
 npm run preview -- --host 0.0.0.0
 ```
 
-The landing page opens a six-player table with China as the human player at the bottom, four HP and four cards per player, and four placeholder cards in China's hand. This prototype has no gameplay, AI, combat, skills, or networking.
+Engine tests cover card effects, responses, discarding, elimination, deck recycling,
+restart, and 100 reproducible complete games with card conservation checks.
 
 ## GitHub Pages
 

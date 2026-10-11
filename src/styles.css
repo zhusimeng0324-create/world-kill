@@ -644,3 +644,137 @@ footer {
     transition: none;
   }
 }
+
+.active-player {
+  box-shadow: 0 0 0 2px #bbd892;
+}
+.eliminated {
+  opacity: 0.4;
+}
+.target-button,
+.control-buttons button {
+  background: #bbd892;
+  color: #152322;
+  border: 0;
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.target-button {
+  width: 100%;
+  margin-top: 10px;
+}
+.turn-controls {
+  border: 1px solid #496258;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  font-size: 14px;
+  color: #d4edb0;
+}
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+.control-buttons button:disabled {
+  opacity: 0.4;
+}
+.cards {
+  flex-wrap: wrap;
+}
+.playable-card {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  height: 230px;
+  transition: transform 0.15s;
+}
+.playable-card:disabled {
+  opacity: 0.6;
+}
+.playable-card:not(:disabled):hover {
+  transform: translateY(-5px);
+  border-color: #bbd892;
+}
+.playable-card:focus-visible,
+.control-buttons button:focus-visible,
+.target-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 3px;
+}
+.selected-card {
+  border: 2px solid #bbd892;
+  transform: translateY(-5px);
+}
+.card-bottom .card-description {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+.rules {
+  margin-top: 28px;
+  color: #a5b4b1;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.rules summary {
+  cursor: pointer;
+  color: #bbd892;
+}
+.game-log {
+  margin-top: 24px;
+  padding: 18px;
+  background: #17272d;
+  border: 1px solid #3d5054;
+}
+.game-log h2 {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.game-log ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 190px;
+  overflow-y: auto;
+  color: #a5b4b1;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.game-log li:first-child {
+  color: #bbd892;
+}
+.empty-hand {
+  color: #a5b4b1;
+  text-align: center;
+}
+@media (max-width: 520px) {
+  .turn-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .playable-card {
+    width: calc(50% - 7px);
+    height: 210px;
+    padding: 14px;
+  }
+  .playable-card .card-bottom h3 {
+    font-size: 14px;
+  }
+  .playable-card .card-top {
+    font-size: 8px;
+  }
+  .arena {
+    height: 540px;
+    grid-template-rows: 170px 1fr 130px;
+  }
+}
